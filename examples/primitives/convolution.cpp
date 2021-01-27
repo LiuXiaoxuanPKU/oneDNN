@@ -56,18 +56,18 @@ void convolution_example(dnnl::engine::kind engine_kind) {
 
     // Tensor dimensions.
     const memory::dim N = 3, // batch size
-            IC = 32, // input channels
-            IH = 13, // input height
-            IW = 13, // input width
-            OC = 64, // output channels
-            KH = 3, // weights height
-            KW = 3, // weights width
+            IC = 3, // input channels
+            IH = 150, // input height
+            IW = 150, // input width
+            OC = 3, // output channels
+            KH = 7, // weights height
+            KW = 7, // weights width
             PH_L = 1, // height padding: left
             PH_R = 1, // height padding: right
             PW_L = 1, // width padding: left
             PW_R = 1, // width padding: right
-            SH = 4, // height-wise stride
-            SW = 4, // width-wise stride
+            SH = 1, // height-wise stride
+            SW = 1, // width-wise stride
             OH = (IH - KH + PH_L + PH_R) / SH + 1, // output height
             OW = (IW - KW + PW_L + PW_R) / SW + 1; // output width
 
@@ -113,9 +113,14 @@ void convolution_example(dnnl::engine::kind engine_kind) {
     // enables the convolution primitive to choose memory layouts for an
     // optimized primitive implementation, and these layouts may differ from the
     // ones provided by the user.
-    auto conv_src_md = memory::desc(src_dims, dt::f32, tag::any);
-    auto conv_weights_md = memory::desc(weights_dims, dt::f32, tag::any);
-    auto conv_dst_md = memory::desc(dst_dims, dt::f32, tag::any);
+
+    // auto conv_src_md = memory::desc(src_dims, dt::f32, tag::any);
+    // auto conv_weights_md = memory::desc(weights_dims, dt::f32, tag::any);
+    // auto conv_dst_md = memory::desc(dst_dims, dt::f32, tag::any);
+
+    auto conv_src_md = memory::desc(user_src_mem.get_desc());
+    auto conv_weights_md = memory::desc(user_weights_mem.get_desc());
+    auto conv_dst_md = memory::desc(user_dst_mem.get_desc());
 
     // Create memory descriptor and memory object for input bias.
     auto user_bias_md = memory::desc(bias_dims, dt::f32, tag::a);
@@ -132,18 +137,18 @@ void convolution_example(dnnl::engine::kind engine_kind) {
             user_bias_md, conv_dst_md, strides_dims, padding_dims_l,
             padding_dims_r);
 
-    // Create primitive post-ops (ReLU).
-    const float scale = 1.f;
-    const float alpha = 0.f;
-    const float beta = 0.f;
-    post_ops conv_ops;
-    conv_ops.append_eltwise(scale, algorithm::eltwise_relu, alpha, beta);
-    primitive_attr conv_attr;
-    conv_attr.set_post_ops(conv_ops);
+    // // Create primitive post-ops (ReLU).
+    // const float scale = 1.f;
+    // const float alpha = 0.f;
+    // const float beta = 0.f;
+    // post_ops conv_ops;
+    // conv_ops.append_eltwise(scale, algorithm::eltwise_relu, alpha, beta);
+    // primitive_attr conv_attr;
+    // conv_attr.set_post_ops(conv_ops);
 
     // Create primitive descriptor.
     auto conv_pd
-            = convolution_forward::primitive_desc(conv_desc, conv_attr, engine);
+            = convolution_forward::primitive_desc(conv_desc, engine);
 
     // For now, assume that the src, weights, and dst memory layouts generated
     // by the primitive and the ones provided by the user are identical.
